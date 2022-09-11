@@ -1,16 +1,21 @@
 // Sections
 const sectionSeleccionarMascota = document.getElementById(
   "seleccionar-mascota"
-);
-const tarjetasMokepon = document.getElementById("mokepones");
-const sectionSeleccionarAtaque = document.getElementById("seleccionar-ataque");
-const sectionReiniciar = document.getElementById("reiniciar");
-const mensajeTurno = document.getElementById("resultado-turno");
-const ataqueJugador = document.getElementById("ataque-jugador");
-const ataqueEnemigo = document.getElementById("ataque-enemigo");
-const botonesAtaqueJugador = document.getElementById("botones-ataque-jugador");
-const seccionMensajes = document.getElementById("mensajes");
-
+  );
+  const tarjetasMokepon = document.getElementById("mokepones");
+  const sectionSeleccionarAtaque = document.getElementById("seleccionar-ataque");
+  const sectionReiniciar = document.getElementById("reiniciar");
+  const mensajeTurno = document.getElementById("resultado-turno");
+  const ataqueJugador = document.getElementById("ataque-jugador");
+  const ataqueEnemigo = document.getElementById("ataque-enemigo");
+  const botonesAtaqueJugador = document.getElementById("botones-ataque-jugador");
+  const seccionMensajes = document.getElementById("mensajes");
+  // Seccion mapa
+  const seccionMapa = document.getElementById("ver-mapa");
+  const canvas = document.getElementById("mapa");
+  canvas.width = 700;
+  canvas.height = 600;
+  
 // Buttons
 const botonMascotaJugador = document.getElementById("boton-mascota-jugador");
 const botonReiniciar = document.getElementById("boton-reiniciar");
@@ -22,9 +27,8 @@ const spanVidasJugador = document.getElementById("vidas-jugador");
 const spanVidasEnemigo = document.getElementById("vidas-enemigo");
 
 // Mapa Mokepon
-const seccionMapa = document.getElementById("ver-mapa");
-const canvas = document.getElementById("mapa");
 const botonMover = document.getElementById("mover-jugador");
+
 
 let mokepones = [];
 
@@ -54,9 +58,9 @@ class Mokepon {
     this.fotoPersonaje.src = foto;
     this.xi = 20;
     this.yi = 30;
-    this.anchoImg = 80;
-    this.altoImg = 80;
-    this.velocidad = 5;
+    this.anchoImg = 100;
+    this.altoImg = 100;
+    this.velocidad = 10;
   }
 }
 
@@ -406,6 +410,7 @@ function aleatorio(min, max) {
 // Funciones de Mapa
 function pintarPersonaje() {
   lienzo.clearRect(0, 0, canvas.width, canvas.height);
+  // lienzo.clearRect(mascotaJugador.xi, mascotaJugador.yi, mascotaJugador.anchoImg, mascotaJugador.altoImg);
   lienzo.drawImage(
     mascotaJugador.fotoPersonaje,
     mascotaJugador.xi,
