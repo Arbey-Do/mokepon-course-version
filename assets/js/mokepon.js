@@ -13,8 +13,6 @@ const seccionMensajes = document.getElementById("mensajes");
 // Seccion mapa
 const seccionMapa = document.getElementById("ver-mapa");
 const canvas = document.getElementById("mapa");
-canvas.width = 700;
-canvas.height = 600;
 
 // Buttons
 const botonMascotaJugador = document.getElementById("boton-mascota-jugador");
@@ -28,6 +26,7 @@ const spanVidasEnemigo = document.getElementById("vidas-enemigo");
 
 let mokepones = [];
 
+let jugadorId = null;
 let mascotaJugador = null;
 let mascotaEnemigo = null;
 let ataqueSelecJugador = "";
@@ -38,14 +37,28 @@ let victoriasEnemigo = 0;
 let imagenJugador = null;
 let imagenEnemigo = "";
 let lienzo = null;
-// let mascotasEnemigas = new Array(3);
+let nIntervId = null;
+
+let alturaMapa;
+let anchoMapa = window.innerWidth - 20;
+
+alturaMapa = (anchoMapa * 600) / 800;
+
+canvas.width = anchoMapa;
+canvas.height = alturaMapa;
+
+const anchoMaximoMapa = 350;
+
+if (anchoMapa > anchoMaximoMapa) {
+  anchoMapa = anchoMaximoMapa - 20;
+}
 
 if (canvas.getContext) {
   lienzo = canvas.getContext("2d");
 }
 
 class Mokepon {
-  constructor(id, nombre, foto, fotoAvatar, xi, yi) {
+  constructor(id, nombre, foto, fotoAvatar, xi = 20, yi = 30) {
     this.id = id;
     this.nombre = nombre;
     this.foto = foto;
@@ -53,17 +66,17 @@ class Mokepon {
     this.victorias = 0;
     this.fotoPersonaje = new Image();
     this.fotoPersonaje.src = foto;
-    this.xi = xi;
-    this.yi = yi;
+    this.anchoImg = 40;
+    this.altoImg = 40;
+    this.xi = aleatorio(0, mapa.width - this.anchoImg);
+    this.yi = aleatorio(0, mapa.height - this.altoImg);
     this.avatarPersonaje = new Image();
     this.avatarPersonaje.src = fotoAvatar;
-    this.anchoImg = 100;
-    this.altoImg = 100;
-    this.velocidad = 10;
+    this.velocidadX = 0;
+    this.velocidadY = 0;
   }
 
   pintarMokepon() {
-    lienzo.clearRect(0, 0, canvas.width, canvas.height);
     lienzo.drawImage(
       this.avatarPersonaje,
       this.xi,
@@ -85,27 +98,21 @@ const hipodoge = new Mokepon(
   "hipodoge",
   "Hipodoge",
   "./assets/img/hipodoge.png",
-  "./assets/img/hipodoge_head.png",
-  20,
-  30
+  "./assets/img/hipodoge_head.png"
 );
 
 const capipepo = new Mokepon(
   "capipepo",
   "Capipepo",
   "./assets/img/capipepo.png",
-  "./assets/img/capipepo_head.png",
-  20,
-  30
+  "./assets/img/capipepo_head.png"
 );
 
 const ratigueya = new Mokepon(
   "ratigueya",
   "Ratigueya",
   "./assets/img/ratigueya.png",
-  "./assets/img/ratigueya_head.png",
-  20,
-  30
+  "./assets/img/ratigueya_head.png"
 );
 
 const ataqueFuego = new Ataque("boton-fuego", "🔥 Fuego");
@@ -136,8 +143,50 @@ ratigueya.ataques = [
 
 mokepones.push(hipodoge, capipepo, ratigueya);
 
-/*Crea las tarjetas de los mokepones
-// para elegirlos en la pantalla del nevagador*/
+const capipepoEnemigo = new Mokepon(
+  "capipepo",
+  "Capipepo",
+  "./assets/img/capipepo.png",
+  "./assets/img/capipepo_head.png"
+);
+
+const ratigueyaEnemigo = new Mokepon(
+  "ratigueya",
+  "Ratigueya",
+  "./assets/img/ratigueya.png",
+  "./assets/img/ratigueya_head.png"
+);
+
+const hipodogeEnemigo = new Mokepon(
+  "hipodoge",
+  "Hipodoge",
+  "./assets/img/hipodoge.png",
+  "./assets/img/hipodoge_head.png"
+);
+
+hipodogeEnemigo.ataques = [
+  ataqueAgua,
+  ataqueAgua,
+  ataqueAgua,
+  ataqueFuego,
+  ataqueTierra,
+];
+capipepoEnemigo.ataques = [
+  ataqueTierra,
+  ataqueTierra,
+  ataqueTierra,
+  ataqueAgua,
+  ataqueFuego,
+];
+ratigueyaEnemigo.ataques = [
+  ataqueFuego,
+  ataqueFuego,
+  ataqueFuego,
+  ataqueAgua,
+  ataqueTierra,
+];
+
+/*Crea las tarjetas de los mokepones dinamicamente en el DOM*/
 function iniciarJuego() {
   mokepones.forEach((mokepon) => {
     const pMokepon = document.createElement("p");
@@ -164,8 +213,22 @@ function iniciarJuego() {
   });
 
   botonMascotaJugador.addEventListener("click", seleccionarMascotaJugador);
-  // Aparece en el juego después de terminar la partida
+
+  // Aparece en el juego después de terminar una batalla.
   botonReiniciar.addEventListener("click", reiniciarJuego);
+
+  unirseAlJuego();
+}
+
+function unirseAlJuego() {
+  fetch("http://localhost:8080/unirse").then(function (res) {
+    if (res.ok) {
+      res.text().then(function (respuesta) {
+        console.log(respuesta);
+        jugadorId = respuesta;
+      });
+    }
+  });
 }
 
 function seleccionarMascotaJugador() {
@@ -188,55 +251,52 @@ function seleccionarMascotaJugador() {
     }
   });
 
-  // Lógica para la sección del MAPA
+  console.log(mascotaJugador);
+
+  seleccionarMokepon(mascotaJugador.nombre);
+
   cargarMovimientosTeclado();
   cargarMovimientosBotones();
 
+  // Oculta la sección de seleccionar personaje.
   sectionSeleccionarMascota.classList.add("hidden");
+
+  // Mostramos la sección del mapa.
   seccionMapa.classList.remove("hidden");
-  mascotaJugador.pintarMokepon();
 
-  // Lógica para la sección del COMBATE
-  // **************************************************
-  // numeroAtaques = mascotaJugador.ataques.length - 1;
-  // imagenJugador = mascotaJugador.foto;
-  // document.getElementById("imagen-jugador").src = imagenJugador;
-  // console.log("Mascota Jugador: ", mascotaJugador);
-  // spanMascotaJugador.innerHTML = mascotaJugador.nombre;
-
-  // limpiarBotonesJugador();
-  // cargarAtaquesJugador();
-
-  sectionSeleccionarMascota.classList.add("hidden");
-  // sectionSeleccionarAtaque.classList.remove("hidden");
-
-  // seleccionarMascotaEnemigo();
-
-  // seleccionarMascotasEnemigas();
+  // Setea un intervalo cada 50 milisegundos que dibuja el mapa y a los personajes
+  nIntervId = setInterval(pintarCanvas, 50);
 }
 
+function seleccionarMokepon(nombreMascotaJugador) {
+  fetch(`http://localhost:8080/mokepon/${jugadorId}`, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      mokepon: nombreMascotaJugador,
+    }),
+  });
+}
+
+/* Carga dinamicamente los movimientos que se pueden realizar con los personajes
+a traves de las teclas de dirección y letras específicas. */
 function cargarMovimientosTeclado() {
-  let nIntervId;
   window.addEventListener("keydown", (e) => {
     if (e.key == "w" || e.key == "ArrowUp") {
-      if (!nIntervId) {
-        nIntervId = setInterval(moverArriba, 50);
-      }
+      moverArriba();
     } else if (e.key == "s" || e.key == "ArrowDown") {
-      if (!nIntervId) {
-        nIntervId = setInterval(moverAbajo, 50);
-      }
+      moverAbajo();
     } else if (e.key == "d" || e.key == "ArrowRight") {
-      if (!nIntervId) {
-        nIntervId = setInterval(moverDerecha, 50);
-      }
+      moverDerecha();
     } else if (e.key == "a" || e.key == "ArrowLeft") {
-      if (!nIntervId) {
-        nIntervId = setInterval(moverIzquierda, 50);
-      }
+      moverIzquierda();
     }
   });
 
+  /* Agrega la función de detener el movimiento de los personajes al levantar las teclas
+  específicas */
   window.addEventListener("keyup", (e) => {
     switch (e.key) {
       case "ArrowUp":
@@ -247,22 +307,41 @@ function cargarMovimientosTeclado() {
       case "s":
       case "a":
       case "d":
-        clearInterval(nIntervId);
-        nIntervId = null;
+        mascotaJugador.velocidadX = 0;
+        mascotaJugador.velocidadY = 0;
         break;
     }
   });
 }
 
+/* Dispara la sección de pelea entre mokepones */
+function iniciarCombate() {
+  seccionMapa.classList.add("hidden");
+  sectionSeleccionarAtaque.classList.remove("hidden");
+  numeroAtaques = mascotaJugador.ataques.length - 1;
+  imagenJugador = mascotaJugador.foto;
+  document.getElementById("imagen-jugador").src = imagenJugador;
+  spanMascotaJugador.innerHTML = mascotaJugador.nombre;
+  imagenEnemigo = mascotaEnemigo.foto;
+  document.getElementById("imagen-enemigo").src = imagenEnemigo;
+  spanMascotaEnemigo.innerHTML = mascotaEnemigo.nombre;
+  limpiarBotonesJugador();
+  cargarAtaquesJugador();
+}
+
+/* Carga los botones de movimiento del jugador. */
 function cargarMovimientosBotones() {
   const botonesMovimiento = document.createElement("div");
-  const movimientos = ["Up", "Right", "Left", "Down"];
+  botonesMovimiento.classList.add("botones-movimiento");
+  const movimientos = ["Up", "Left", "Down", "Right"];
   movimientos.forEach((movimiento) => {
     const boton = document.createElement("button");
     boton.id = movimiento.toLowerCase();
     boton.textContent = movimiento;
+    boton.classList.add("boton-mascota-jugador");
     switch (movimiento) {
       case "Up":
+        boton.classList.add("block-auto-margin");
         cargarMovimiento(boton, moverArriba);
         break;
       case "Right":
@@ -280,51 +359,46 @@ function cargarMovimientosBotones() {
   seccionMapa.appendChild(botonesMovimiento);
 }
 
+// Carga en cada boton el listener respectivo a la acción del mouse
 function cargarMovimiento(btn, accion) {
-  let nIntervId;
   const eventos = ["mousedown", "mouseleave", "mouseup"];
   eventos.forEach((evento) => {
     switch (evento) {
       case "mousedown":
-        btn.addEventListener(evento, () => {
-          if (!nIntervId) {
-            nIntervId = setInterval(accion, 50);
-            console.log(nIntervId);
-          }
-        });
+        btn.addEventListener(evento, accion);
         break;
       case "mouseleave":
       case "mouseup":
         btn.addEventListener(evento, () => {
-          clearInterval(nIntervId);
-          nIntervId = null;
-          console.log(nIntervId);
+          mascotaJugador.velocidadX = 0;
+          mascotaJugador.velocidadY = 0;
         });
         break;
     }
   });
 }
 
+// Mueve al jugador hacia arriba.
 function moverArriba() {
-  mascotaJugador.yi -= mascotaJugador.velocidad;
-  mascotaJugador.pintarMokepon();
+  mascotaJugador.velocidadY = -10;
 }
 
+// Mueve al jugador a la derecha.
 function moverDerecha() {
-  mascotaJugador.xi += mascotaJugador.velocidad;
-  mascotaJugador.pintarMokepon();
+  mascotaJugador.velocidadX = 10;
 }
 
+// Mueve al jugador a la izquierda.
 function moverIzquierda() {
-  mascotaJugador.xi -= mascotaJugador.velocidad;
-  mascotaJugador.pintarMokepon();
+  mascotaJugador.velocidadX = -10;
 }
 
+// Mueve al jugador hacia abajo.
 function moverAbajo() {
-  mascotaJugador.yi += mascotaJugador.velocidad;
-  mascotaJugador.pintarMokepon();
+  mascotaJugador.velocidadY = 10;
 }
 
+// Carga los botones de ataque del jugador en la seccion de botones-ataque-jugador
 function cargarAtaquesJugador() {
   mascotaJugador.ataques.forEach((ataque) => {
     const text = document.createTextNode(ataque.nombre);
@@ -348,24 +422,10 @@ function cargarAtaquesJugador() {
   });
 }
 
+/* Limpia la sección de botones-ataque-jugador
+para quitar los botones utilizados previamnete */
 function limpiarBotonesJugador() {
   botonesAtaqueJugador.innerHTML = "";
-}
-
-// function seleccionarMascotasEnemigas() {
-//   for (let i = 0; i < mascotasEnemigas.length; i++) {
-//     mascotasEnemigas[i] = mokepones[aleatorio(0, mokepones.length - 1)];
-//     mascotasEnemigas[i].pintarMokepon();
-//   }
-//   console.log(mascotasEnemigas);
-// }
-
-function seleccionarMascotaEnemigo() {
-  mascotaEnemigo = mokepones[aleatorio(0, mokepones.length - 1)];
-  // imagenEnemigo = mascotaEnemigo.foto;
-  // document.getElementById("imagen-enemigo").src = imagenEnemigo;
-  console.log("Mascota enemiga es: ", mascotaEnemigo);
-  // spanMascotaEnemigo.innerHTML = mascotaEnemigo.nombre;
 }
 
 function ataqueAleatorioEnemigo() {
@@ -382,6 +442,7 @@ function ataqueAleatorioEnemigo() {
   combate(ataqueSelecJugador, ataqueSelecEnemigo);
 }
 
+// Determina el ganador de la ronda actual
 function combate(ataqueJugador, ataqueEnemigo) {
   if (ataqueJugador == ataqueEnemigo) {
     crearMensajeTurno("EMPATE");
@@ -433,6 +494,64 @@ function reiniciarJuego() {
 
 function aleatorio(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+function pintarCanvas() {
+  mascotaJugador.xi += mascotaJugador.velocidadX;
+  mascotaJugador.yi += mascotaJugador.velocidadY;
+  lienzo.clearRect(0, 0, canvas.width, canvas.height);
+  mascotaJugador.pintarMokepon();
+  enviarPosicion(mascotaJugador.x, mascotaJugador.y);
+  mostrarEnemigos();
+  if (mascotaJugador.velocidadX !== 0 || mascotaJugador.velocidadY !== 0) {
+    revisarColision(capipepoEnemigo);
+    revisarColision(hipodogeEnemigo);
+    revisarColision(ratigueyaEnemigo);
+  }
+}
+
+function enviarPosicion(x, y) {
+  fetch(`http://localhost:8080/mokepon/${jugadorId}/posicion`, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      x,
+      y,
+    }),
+  });
+}
+
+function mostrarEnemigos() {
+  ratigueyaEnemigo.pintarMokepon();
+  hipodogeEnemigo.pintarMokepon();
+  capipepoEnemigo.pintarMokepon();
+}
+
+function revisarColision(enemigo) {
+  const arribaMascota = mascotaJugador.yi;
+  const abajoMascota = mascotaJugador.yi + mascotaJugador.altoImg;
+  const derechaMascota = mascotaJugador.xi + mascotaJugador.anchoImg;
+  const izquierdaMascota = mascotaJugador.xi;
+
+  const arribaEnemigo = enemigo.yi;
+  const abajoEnemigo = enemigo.yi + enemigo.altoImg;
+  const derechaEnemigo = enemigo.xi + enemigo.anchoImg;
+  const izquierdaEnemigo = enemigo.xi;
+
+  if (
+    abajoMascota < arribaEnemigo ||
+    arribaMascota > abajoEnemigo ||
+    derechaMascota < izquierdaEnemigo ||
+    izquierdaMascota > derechaEnemigo
+  ) {
+    return;
+  }
+  mascotaJugador.velocidadX = 0;
+  mascotaJugador.velocidadY = 0;
+  mascotaEnemigo = enemigo;
+  iniciarCombate();
 }
 
 window.addEventListener("load", iniciarJuego);

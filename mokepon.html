@@ -2,7 +2,10 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOKEPON!</title>
+    <!-- Tengo problemas al cargar estás fuentes por eso está comentado este recurso -->
     <!-- <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,21 +15,21 @@
     <link rel="stylesheet" href="./assets/css/styles.css" />
   </head>
   <body>
-    <!-- Seccion de seleccionar mascota -->
+    <!-- Sección de seleccionar mascota -->
     <section id="seleccionar-mascota" class="seleccionar-mascota">
       <h1 class="titulo">Mokepon</h1>
       <h2 class="subtitulo">Elige tu mascota:</h2>
       <div id="mokepones" class="mokepones"></div>
-      <button id="boton-mascota-jugador">Seleccionar</button>
+      <button id="boton-mascota-jugador" class="boton-mascota-jugador">Seleccionar</button>
     </section>
 
-    <!-- SECCION DEL MAPA MOKEPON ******* -->
+    <!-- Sección del mapa mokepon -->
     <section id="ver-mapa" class="ver-mapa hidden">
-      <h1>Recorre el mapa con tu Mokepon</h1>
+      <h2 class="subtitulo">Recorre el mapa con tu Mokepon</h2>
       <canvas id="mapa" class="mapa"></canvas>
     </section>
     
-    <!-- Seccion de batalla -->
+    <!-- Sección de batalla -->
     <section id="seleccionar-ataque" class="seleccionar-ataque hidden">
       <h1 class="titulo">Mokepon</h1>
       <h2 class="subtitulo">Elige tu ataque:</h2>
