@@ -10,6 +10,7 @@ const ataqueJugador = document.getElementById("ataque-jugador");
 const ataqueEnemigo = document.getElementById("ataque-enemigo");
 const botonesAtaqueJugador = document.getElementById("botones-ataque-jugador");
 const seccionMensajes = document.getElementById("mensajes");
+
 // Seccion mapa
 const seccionMapa = document.getElementById("ver-mapa");
 const canvas = document.getElementById("mapa");
@@ -220,6 +221,7 @@ function iniciarJuego() {
   unirseAlJuego();
 }
 
+// esto es código del servidor
 function unirseAlJuego() {
   fetch("http://localhost:8080/unirse").then(function (res) {
     if (res.ok) {
